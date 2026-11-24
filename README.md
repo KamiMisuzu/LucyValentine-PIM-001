@@ -67,17 +67,6 @@ Heavy trees (`GPT-SoVITS-*`, `RVC`, sprite PNGs, `voice`, `dataset`, `output`) s
 Right-click: chat history (▶ if wav saved), info, settings, quit.  
 Settings → 声音 → 播放方式: **整句** (default) or **一句一句**.
 
-## Before you publish
-
-1. **Rotate** any API key that ever appeared in a file or chat.
-2. Confirm `.gitignore` excludes secrets, assets, and IDE junk.
-3. Git commits must use **your** `user.name` / `user.email` — **not** a Cursor-provided address.
-
-```powershell
-git config user.name  "Your Name"
-git config user.email "you@example.com"
-```
-
 ## License
 
 MIT — [LICENSE](LICENSE), [NOTICE](NOTICE), [SECURITY](SECURITY.md).
