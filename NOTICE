@@ -21,7 +21,9 @@ It does **not** grant rights to:
 
 Sprites, reference voice, and fine-tuned SoVITS/GPT weights are **bring your
 own** (inference weights only — this repo does not document or ship training).
-Do not redistribute those assets unless you own the rights or have permission.
+For standees, see `images_hq/README.md` (place your own PNGs, optional
+Real-ESRGAN upscale). Do not redistribute those assets unless you own the
+rights or have permission.
 
 **LucyValentine-PIM-001** is an unofficial fan experiment and is **not
 affiliated with, endorsed by, or related to** the rights holders of

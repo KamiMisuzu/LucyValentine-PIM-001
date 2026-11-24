@@ -43,7 +43,8 @@ tools/Ollama/
 
 # --- game / training assets (IP — do not publish by default) ---
 images/
-images_hq/
+images_hq/*
+!images_hq/README.md
 images_hq_broken/
 images_lucy_src/
 voice/

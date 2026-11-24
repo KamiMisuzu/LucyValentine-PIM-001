@@ -31,6 +31,15 @@ Only **ready weights + load**. No training instructions in this repo.
 
 Put checkpoints as described in [`voice_models/README.md`](voice_models/README.md), then enable voice in `settings.yaml`.
 
+## Sprites (BYO + optional HQ upscale)
+
+Game standees are **not** in this repo. Put your own `Images-l*.png` under `images/`, then either:
+
+- point `paths.images_dir` at `images/`, or
+- run Real-ESRGAN via `scripts/upscale_lucy_sprites.ps1` → output in `images_hq/`
+
+Full steps: [`images_hq/README.md`](images_hq/README.md).
+
 ## LLM
 
 Prefer env vars for keys (`llm.api_key_env`). Never commit `settings.yaml`.
@@ -48,8 +57,10 @@ Prefer env vars for keys (`llm.api_key_env`). Never commit `settings.yaml`.
 | `scripts/setup_lucy.ps1` | One-click path init |
 | `scripts/companion_tts_worker.py` | GPT-SoVITS inference worker |
 | `voice_models/` | Where to drop inference weights (docs only) |
+| `images_hq/` | Upscaled faces (PNGs local-only; see README there) |
+| `scripts/upscale_lucy_sprites.ps1` | Real-ESRGAN RGBA upscale helper |
 
-Heavy trees (`GPT-SoVITS-*`, `RVC`, `images_hq`, `voice`, `dataset`, `output`) stay **out of git**.
+Heavy trees (`GPT-SoVITS-*`, `RVC`, sprite PNGs, `voice`, `dataset`, `output`) stay **out of git**.
 
 ## Desktop pet
 
