@@ -7,6 +7,7 @@ Free public APIs (no API key):
 from __future__ import annotations
 
 import json
+import re
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -283,3 +284,176 @@ def fetch_weather(city: str = "南宁") -> dict[str, Any]:
         return {"ok": False, "error": f"网络错误：{exc}", "city_query": city}
     except Exception as exc:  # noqa: BLE001
         return {"ok": False, "error": str(exc), "city_query": city}
+
+
+# Common CN/JP/EN names → Yahoo ticker (US / some ADR). Free, no API key.
+_STOCK_ALIASES: dict[str, str] = {
+    "英伟达": "NVDA",
+    "英偉達": "NVDA",
+    "nvidia": "NVDA",
+    "nvda": "NVDA",
+    "苹果": "AAPL",
+    "蘋果": "AAPL",
+    "apple": "AAPL",
+    "aapl": "AAPL",
+    "特斯拉": "TSLA",
+    "tesla": "TSLA",
+    "tsla": "TSLA",
+    "微软": "MSFT",
+    "微軟": "MSFT",
+    "microsoft": "MSFT",
+    "msft": "MSFT",
+    "谷歌": "GOOGL",
+    "google": "GOOGL",
+    "googl": "GOOGL",
+    "亚马逊": "AMZN",
+    "亞馬遜": "AMZN",
+    "amazon": "AMZN",
+    "amzn": "AMZN",
+    "meta": "META",
+    "脸书": "META",
+    "amd": "AMD",
+    "台积电": "TSM",
+    "台積電": "TSM",
+    "tsm": "TSM",
+    "可口可乐": "KO",
+    "比特币": "BTC-USD",
+    "bitcoin": "BTC-USD",
+    "btc": "BTC-USD",
+}
+
+
+def resolve_stock_symbol(query: str) -> str:
+    q = (query or "").strip()
+    if not q:
+        return ""
+    low = q.lower()
+    if low in _STOCK_ALIASES:
+        return _STOCK_ALIASES[low]
+    for name, sym in _STOCK_ALIASES.items():
+        if name.lower() in low or name in q:
+            return sym
+    # Already a ticker?
+    if re.fullmatch(r"[A-Za-z][A-Za-z0-9.\-]{0,11}", q):
+        return q.upper()
+    return q.upper()
+
+
+def fetch_stock_quote(query: str) -> dict[str, Any]:
+    """
+    Latest quote via Yahoo Finance chart API (free, no key).
+    query: 英伟达 / NVDA / Apple …
+    """
+    raw_q = (query or "").strip()
+    if not raw_q:
+        return {"ok": False, "error": "empty query"}
+    symbol = resolve_stock_symbol(raw_q)
+    errors: list[str] = []
+
+    # 1) Yahoo chart
+    try:
+        url = (
+            "https://query1.finance.yahoo.com/v8/finance/chart/"
+            f"{urllib.parse.quote(symbol, safe='')}?interval=1d&range=5d"
+        )
+        req = urllib.request.Request(
+            url,
+            headers={
+                "User-Agent": "Mozilla/5.0 (compatible; LucyCompanion/1.0)",
+                "Accept": "application/json",
+            },
+        )
+        with urllib.request.urlopen(req, timeout=10.0) as resp:
+            data = json.loads(resp.read().decode("utf-8", errors="replace"))
+        result = ((data.get("chart") or {}).get("result") or [None])[0]
+        if not result:
+            err = ((data.get("chart") or {}).get("error") or {}).get("description")
+            raise ValueError(err or "empty chart result")
+        meta = result.get("meta") or {}
+        price = meta.get("regularMarketPrice")
+        prev = meta.get("chartPreviousClose") or meta.get("previousClose")
+        currency = meta.get("currency") or "USD"
+        name = meta.get("longName") or meta.get("shortName") or symbol
+        exchange = meta.get("exchangeName") or meta.get("fullExchangeName") or ""
+        change = None
+        change_pct = None
+        if price is not None and prev not in (None, 0):
+            change = float(price) - float(prev)
+            change_pct = change / float(prev) * 100.0
+        summary_zh = (
+            f"{name}（{symbol}）现价约 {price} {currency}"
+            + (
+                f"，较前收 {change:+.2f}（{change_pct:+.2f}%）"
+                if change is not None and change_pct is not None
+                else ""
+            )
+        )
+        summary_ja = (
+            f"{name}（{symbol}）の現在値はおよそ {price} {currency}"
+            + (
+                f"、前日比 {change:+.2f}（{change_pct:+.2f}%）"
+                if change is not None and change_pct is not None
+                else ""
+            )
+        )
+        return {
+            "ok": True,
+            "source": "yahoo_finance_chart",
+            "query": raw_q,
+            "symbol": symbol,
+            "name": name,
+            "exchange": exchange,
+            "currency": currency,
+            "price": price,
+            "previous_close": prev,
+            "change": change,
+            "change_pct": change_pct,
+            "market_state": meta.get("marketState"),
+            "timezone": meta.get("timezone") or meta.get("exchangeTimezoneName"),
+            "summary_zh": summary_zh,
+            "summary_ja": summary_ja,
+            "note": "公开行情快照，可能有延迟；用 Lucy 口吻转述，不要假装实时交易终端。",
+        }
+    except Exception as exc:  # noqa: BLE001
+        errors.append(f"yahoo: {exc}")
+
+    # 2) Stooq CSV fallback (US tickers as xxx.us)
+    try:
+        stooq_sym = symbol.lower()
+        if not stooq_sym.endswith(".us") and "-" not in stooq_sym:
+            stooq_sym = f"{stooq_sym}.us"
+        url = f"https://stooq.com/q/l/?s={urllib.parse.quote(stooq_sym)}&f=sd2t2ohlcv&h&e=csv"
+        req = urllib.request.Request(
+            url, headers={"User-Agent": "Mozilla/5.0 (compatible; LucyCompanion/1.0)"}
+        )
+        with urllib.request.urlopen(req, timeout=10.0) as resp:
+            text = resp.read().decode("utf-8", errors="replace").strip()
+        lines = [ln for ln in text.splitlines() if ln.strip()]
+        if len(lines) < 2:
+            raise ValueError(f"bad csv: {text[:80]}")
+        # Symbol,Date,Time,Open,High,Low,Close,Volume
+        cols = lines[1].split(",")
+        close = float(cols[6])
+        summary_zh = f"{symbol} 现价约 {close}（Stooq）"
+        summary_ja = f"{symbol}の現在値はおよそ {close}（Stooq）"
+        return {
+            "ok": True,
+            "source": "stooq",
+            "query": raw_q,
+            "symbol": symbol,
+            "price": close,
+            "currency": "USD",
+            "summary_zh": summary_zh,
+            "summary_ja": summary_ja,
+            "note": "Stooq 回退行情；用 Lucy 口吻转述。",
+            "errors": errors,
+        }
+    except Exception as exc:  # noqa: BLE001
+        errors.append(f"stooq: {exc}")
+
+    return {
+        "ok": False,
+        "error": "; ".join(errors),
+        "query": raw_q,
+        "symbol": symbol,
+    }

@@ -377,8 +377,10 @@ class LucyAgent:
             "ok": world.get("ok"),
             "time_ok": (world.get("time") or {}).get("ok"),
             "weather_ok": (world.get("weather") or {}).get("ok"),
+            "stock_ok": (world.get("stock") or {}).get("ok"),
             "weather_summary": (world.get("weather") or {}).get("summary_zh"),
             "time_display": (world.get("time") or {}).get("display_zh"),
+            "stock_summary": (world.get("stock") or {}).get("summary_zh"),
             "prefetch_time": self.prefetch_time,
             "prefetch_weather": self.prefetch_weather,
         }
@@ -600,11 +602,17 @@ class LucyAgent:
     def _world_facts_ready(world: dict[str, Any]) -> bool:
         """True when every host-requested world fact resolved OK."""
         needs = world.get("needs") or {}
-        if not needs.get("time") and not needs.get("weather"):
+        if (
+            not needs.get("time")
+            and not needs.get("weather")
+            and not needs.get("stock")
+        ):
             return False
         if needs.get("time") and not (world.get("time") or {}).get("ok"):
             return False
         if needs.get("weather") and not (world.get("weather") or {}).get("ok"):
+            return False
+        if needs.get("stock") and not (world.get("stock") or {}).get("ok"):
             return False
         return True
 
@@ -612,12 +620,15 @@ class LucyAgent:
         """Deterministic Lucy line from host facts — JP/ZH aligned."""
         time_info = world.get("time") or {}
         wx = world.get("weather") or {}
+        stock = world.get("stock") or {}
         t_ja = str(
             time_info.get("display_ja") or time_info.get("display_zh") or ""
         ).strip()
         t_zh = str(time_info.get("display_zh") or "").strip()
         w_ja = str(wx.get("summary_ja") or "").strip()
         w_zh = str(wx.get("summary_zh") or "").strip()
+        s_ja = str(stock.get("summary_ja") or "").strip()
+        s_zh = str(stock.get("summary_zh") or "").strip()
         bits_ja: list[str] = []
         bits_zh: list[str] = []
         if t_ja or t_zh:
@@ -626,6 +637,9 @@ class LucyAgent:
         if w_ja or w_zh:
             bits_ja.append(w_ja or w_zh)
             bits_zh.append(w_zh or w_ja)
+        if s_ja or s_zh:
+            bits_ja.append(s_ja or s_zh)
+            bits_zh.append(s_zh or s_ja)
         text = (
             "マスター、" + "。".join(bits_ja) + "。"
             if bits_ja
@@ -644,16 +658,16 @@ class LucyAgent:
         *,
         world: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        """Single-shot: speak prefetched time/weather as Lucy (no ReAct)."""
+        """Single-shot: speak prefetched time/weather/stock as Lucy (no ReAct)."""
         mode = suggested or "daily"
         messages = [
             {
                 "role": "system",
                 "content": (
                     "/no_think\n"
-                    "你是 Lucy。用一句ですます日文直接回答 master 问的时间/天气。"
+                    "你是 Lucy。用一句ですます日文直接回答 master 问的时间/天气/股价。"
                     "text（日文）与 hint（中文）必须信息对齐。"
-                    "必须带上下面事实里的数字与天气词；禁止暗い夢/朝ごはん套话。"
+                    "必须带上下面事实里的数字与关键词；禁止暗い夢/朝ごはん套话；禁止说没有手段。"
                     f"{fact_block}"
                     "text=日文；hint=对应中文意思（同一信息量）。"
                     '只输出：{"emotion":"calm","text":"...","hint":"..."}'

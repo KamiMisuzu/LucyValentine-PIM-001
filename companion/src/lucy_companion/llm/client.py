@@ -32,6 +32,8 @@ class LLMClient:
         self.think = bool(llm.get("think", False))
         self.num_predict = llm.get("num_predict")  # optional hard cap
         self._ollama_native = self._detect_ollama(self.base_url, llm)
+        self.enable_search = self._resolve_enable_search(llm, self.base_url, self._ollama_native)
+        self.search_options = self._resolve_search_options(llm)
         self._usage_hooks: list[Callable[[int], None]] = []
 
     def add_usage_hook(self, fn: Callable[[int], None]) -> None:
@@ -52,6 +54,8 @@ class LLMClient:
         self.think = bool(llm.get("think", self.think))
         self.num_predict = llm.get("num_predict")
         self._ollama_native = self._detect_ollama(self.base_url, llm)
+        self.enable_search = self._resolve_enable_search(llm, self.base_url, self._ollama_native)
+        self.search_options = self._resolve_search_options(llm)
         self._client = None
 
     def _emit_usage(self, tokens: int) -> None:
@@ -96,6 +100,43 @@ class LLMClient:
             return True
         u = (base_url or "").lower()
         return "11434" in u or "ollama" in u
+
+    @staticmethod
+    def _provider_supports_search(base_url: str, llm: dict[str, Any]) -> bool:
+        """Qwen / Model Studio compatible-mode accepts enable_search."""
+        provider = str(llm.get("provider") or "").lower()
+        if provider in ("qianwen", "dashscope", "qwen", "bailian"):
+            return True
+        u = (base_url or "").lower()
+        return any(
+            tip in u
+            for tip in (
+                "maas",
+                "qianwen",
+                "dashscope",
+                "aliyuncs.com",
+                "qwencloud",
+            )
+        )
+
+    @classmethod
+    def _resolve_enable_search(
+        cls, llm: dict[str, Any], base_url: str, ollama_native: bool
+    ) -> bool:
+        if ollama_native:
+            return False
+        if "enable_search" in llm:
+            return bool(llm.get("enable_search")) and cls._provider_supports_search(
+                base_url, llm
+            )
+        return cls._provider_supports_search(base_url, llm)
+
+    @staticmethod
+    def _resolve_search_options(llm: dict[str, Any]) -> dict[str, Any] | None:
+        raw = llm.get("search_options")
+        if isinstance(raw, dict) and raw:
+            return dict(raw)
+        return None
 
     def _ollama_chat_url(self) -> str:
         """Map http://host:11434/v1 → http://host:11434/api/chat"""
@@ -148,12 +189,19 @@ class LLMClient:
             )
 
         # Cloud OpenAI-compatible: do not send Ollama-only think/options
-        resp = self.client.chat.completions.create(
-            model=model_name,
-            messages=messages,
-            temperature=temp,
-            max_tokens=max_tok,
-        )
+        kwargs: dict[str, Any] = {
+            "model": model_name,
+            "messages": messages,
+            "temperature": temp,
+            "max_tokens": max_tok,
+        }
+        # Qwen MaaS: native web search (not an OpenAI-standard field)
+        if self.enable_search:
+            extra: dict[str, Any] = {"enable_search": True}
+            if self.search_options:
+                extra["search_options"] = self.search_options
+            kwargs["extra_body"] = extra
+        resp = self.client.chat.completions.create(**kwargs)
         msg = resp.choices[0].message
         content = (msg.content or "").strip()
         if not content:

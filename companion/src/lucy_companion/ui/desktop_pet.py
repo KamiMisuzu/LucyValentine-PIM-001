@@ -48,6 +48,9 @@ from lucy_companion.ui import icons as ui_icons
 from lucy_companion.ui.info_panel import ChatHistoryDialog, LucyInfoDialog
 from lucy_companion.ui.settings_dialog import SettingsDialog
 
+# In-game room plate for recording (no green screen).
+ROOM_BG_REL = "images/Images-bg_room01_light.jpg"
+
 # Near-expression while speaking (same-mood only). Blink no longer swaps faces.
 TALK_NEAR = {
     "happy": ["l25", "l28", "l29"],
@@ -200,7 +203,8 @@ class DesktopPetWindow(QMainWindow):
             self._show_debug = True
             self._state.show_debug = True
 
-        self._drag_offset: QPoint | None = None
+        self._drag_offset: QPoint | None = None  # window drag (compact mode)
+        self._actor_drag_offset: QPoint | None = None  # Lucy stage drag (room mode)
         self._worker: AskWorker | None = None
         self._voice_worker: VoiceWorker | None = None
         self._current_sprite: str | None = None
@@ -229,6 +233,9 @@ class DesktopPetWindow(QMainWindow):
         self._stream_total = 1
         self._stream_active = False
 
+        self._room_backdrop = bool(self._state.room_backdrop)
+        self._room_bg_full: QPixmap | None = None
+
         self._player = QMediaPlayer(self)
         self._audio = QAudioOutput(self)
         self._audio.setVolume(0.0 if self._state.muted else float(self._state.volume))
@@ -238,7 +245,9 @@ class DesktopPetWindow(QMainWindow):
         self._player.durationChanged.connect(self._on_duration_changed)
         self._player.positionChanged.connect(self._on_position_changed)
 
-        flags = Qt.WindowType.FramelessWindowHint | Qt.WindowType.Tool
+        # Use Window (not Tool): Tool/WS_EX_TOOLWINDOW is invisible to OBS
+        # "Window Capture" picker and often to Alt-Tab.
+        flags = Qt.WindowType.FramelessWindowHint | Qt.WindowType.Window
         if self._always_on_top:
             flags |= Qt.WindowType.WindowStaysOnTopHint
         self.setWindowFlags(flags)
@@ -250,9 +259,26 @@ class DesktopPetWindow(QMainWindow):
         root.setObjectName("root")
         root.setStyleSheet("QWidget#root { background: transparent; }")
         self.setCentralWidget(root)
+        self._root = root
+        self._bg_label = QLabel(root)
+        self._bg_label.setObjectName("roomBg")
+        self._bg_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._bg_label.setScaledContents(False)
+        self._bg_label.hide()
+        self._bg_label.lower()
+
+        # Movable stage: chat column + Lucy (drag this inside the room)
+        self._actor = QWidget(root)
+        self._actor.setObjectName("actor")
+        self._actor.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+        self._actor.setStyleSheet("QWidget#actor { background: transparent; }")
+        self._root_layout = QVBoxLayout(root)
+        self._root_layout.setContentsMargins(0, 0, 0, 0)
+        self._root_layout.setSpacing(0)
+        self._root_layout.addWidget(self._actor, 0, Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignRight)
 
         # Bubble/input on the left (near face), Lucy on the right
-        layout = QHBoxLayout(root)
+        layout = QHBoxLayout(self._actor)
         layout.setContentsMargins(6, 6, 6, 6)
         layout.setSpacing(4)
 
@@ -451,15 +477,23 @@ class DesktopPetWindow(QMainWindow):
 
     # ----- window chrome -----
     def _apply_topmost(self) -> None:
-        flags = Qt.WindowType.FramelessWindowHint | Qt.WindowType.Tool
+        flags = Qt.WindowType.FramelessWindowHint | Qt.WindowType.Window
         if self._always_on_top:
             flags |= Qt.WindowType.WindowStaysOnTopHint
         self.setWindowFlags(flags)
-        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+        self.setAttribute(
+            Qt.WidgetAttribute.WA_TranslucentBackground, not self._room_backdrop
+        )
         self.show()
+        if self._room_backdrop:
+            QTimer.singleShot(0, self._refresh_room_bg_geom)
+            QTimer.singleShot(0, self._clamp_actor)
 
     def _place_window(self) -> None:
-        self.adjustSize()
+        if self._room_backdrop:
+            self._enter_room_layout()
+            return
+        self._layout_fit()
         screen = QGuiApplication.primaryScreen()
         geo = screen.availableGeometry() if screen else None
         if self._state.x is not None and self._state.y is not None:
@@ -471,6 +505,9 @@ class DesktopPetWindow(QMainWindow):
         self._snap_edges()
 
     def _snap_edges(self, margin: int = 16) -> None:
+        if self._room_backdrop:
+            self._clamp_actor()
+            return
         screen = QGuiApplication.primaryScreen()
         if not screen:
             return
@@ -486,21 +523,50 @@ class DesktopPetWindow(QMainWindow):
             y = geo.bottom() - self.height() - margin
         self.move(x, y)
 
+    def _layout_fit(self) -> None:
+        """Resize compact window, or only the actor stage in room mode."""
+        if self._room_backdrop:
+            actor = getattr(self, "_actor", None)
+            if actor is not None:
+                actor.adjustSize()
+                self._clamp_actor()
+            return
+        self.adjustSize()
+
+    def _clamp_actor(self) -> None:
+        actor = getattr(self, "_actor", None)
+        root = getattr(self, "_root", None)
+        if actor is None or root is None:
+            return
+        actor.adjustSize()
+        max_x = max(0, root.width() - actor.width())
+        max_y = max(0, root.height() - actor.height())
+        x = min(max(0, actor.x()), max_x)
+        y = min(max(0, actor.y()), max_y)
+        actor.move(x, y)
+
     def _persist(self) -> None:
-        self._state.x = self.x()
-        self._state.y = self.y()
+        if self._room_backdrop:
+            actor = getattr(self, "_actor", None)
+            if actor is not None:
+                self._state.lucy_x = actor.x()
+                self._state.lucy_y = actor.y()
+        else:
+            self._state.x = self.x()
+            self._state.y = self.y()
         self._state.muted = self._audio.volume() <= 0.001
         self._state.volume = 0.9 if self._state.muted else float(self._audio.volume())
         self._state.always_on_top = self._always_on_top
         self._state.target_height = self._target_height
         self._state.show_debug = self._show_debug
+        self._state.room_backdrop = self._room_backdrop
         save_state(self._state_path, self._state)
 
     def closeEvent(self, event) -> None:  # noqa: N802
         self._persist()
         super().closeEvent(event)
-        # Tool windows don't keep quitOnLastWindowClosed alive after dialogs;
-        # quit explicitly only when the pet itself closes.
+        # Quit explicitly when the pet closes (QuitOnLastWindowClosed is off
+        # so native file dialogs don't tear down the process).
         app = QApplication.instance()
         if app is not None:
             app.quit()
@@ -585,7 +651,7 @@ class DesktopPetWindow(QMainWindow):
             self._current_sprite = sid
             if as_base:
                 self._base_sprite = sid
-            self.adjustSize()
+            self._layout_fit()
             return
 
         # Cover-cut: keep old visible until new is fully on top (no opacity anim)
@@ -598,7 +664,7 @@ class DesktopPetWindow(QMainWindow):
         self._current_sprite = sid
         if as_base:
             self._base_sprite = sid
-        self.adjustSize()
+        self._layout_fit()
         # animate unused — translucent Windows blanks with OpacityEffect crossfade
         _ = animate
 
@@ -746,6 +812,7 @@ class DesktopPetWindow(QMainWindow):
     def _over_interactive(self, global_pos: QPoint) -> bool:
         # Every chrome control must be listed — else WS_EX_TRANSPARENT swallows clicks
         widgets: list[QWidget] = [
+            self._actor,
             self.sprite_host,
             self.bubble,
             self.input,
@@ -830,7 +897,7 @@ class DesktopPetWindow(QMainWindow):
         if path and Path(path).exists():
             if ja:
                 self.bubble.start_voice_sync(zh, ja)
-                self.adjustSize()
+                self._layout_fit()
             self._start_talk_anim(self._last_emotion, self._base_sprite or "l21")
             self._play_voice(path)
             return
@@ -841,7 +908,7 @@ class DesktopPetWindow(QMainWindow):
         # File gone / never written — regenerate
         self._replay_resynth = True
         self.bubble.start_regen_progress(zh or "……", ja)
-        self.adjustSize()
+        self._layout_fit()
         self._replay_status("重新生成语音…")
         self._start_voice_job(ja, self._last_emotion or "neutral")
 
@@ -894,6 +961,13 @@ class DesktopPetWindow(QMainWindow):
         act_dbg = QAction("显示调试" if not self._show_debug else "隐藏调试", self)
         act_dbg.triggered.connect(self._toggle_debug)
         menu.addAction(act_dbg)
+
+        act_room = QAction(
+            "关闭房间背景" if self._room_backdrop else "打开房间背景",
+            self,
+        )
+        act_room.triggered.connect(self._toggle_room_backdrop)
+        menu.addAction(act_room)
 
         menu.addSeparator()
         act_quit = QAction("退出 LucyValentine-PIM-001", self)
@@ -1033,7 +1107,7 @@ class DesktopPetWindow(QMainWindow):
         # Voice bridge reads settings.voice each synth; keep note for UI only
         _ = voice.get("enabled", True)
         self._persist()
-        self.adjustSize()
+        self._layout_fit()
 
     def _toggle_topmost(self) -> None:
         self._always_on_top = not self._always_on_top
@@ -1045,12 +1119,136 @@ class DesktopPetWindow(QMainWindow):
         self.status.setVisible(self._show_debug)
         self._persist()
 
+    def _toggle_room_backdrop(self) -> None:
+        self._apply_room_backdrop(not self._room_backdrop)
+        self._persist()
+
+    def _room_bg_path(self) -> Path:
+        return self.settings.project_root / ROOM_BG_REL
+
+    def _load_room_bg(self) -> QPixmap | None:
+        if self._room_bg_full is not None and not self._room_bg_full.isNull():
+            return self._room_bg_full
+        path = self._room_bg_path()
+        if not path.exists():
+            return None
+        pm = QPixmap(str(path))
+        if pm.isNull():
+            return None
+        self._room_bg_full = pm
+        return pm
+
+    def _refresh_room_bg_geom(self) -> None:
+        root = getattr(self, "_root", None)
+        bg = getattr(self, "_bg_label", None)
+        if root is None or bg is None or not self._room_backdrop:
+            return
+        full = self._load_room_bg()
+        if full is None:
+            return
+        r = root.rect()
+        if r.width() < 2 or r.height() < 2:
+            return
+        scaled = full.scaled(
+            r.size(),
+            Qt.AspectRatioMode.KeepAspectRatioByExpanding,
+            Qt.TransformationMode.SmoothTransformation,
+        )
+        # Center-crop to window
+        x = max(0, (scaled.width() - r.width()) // 2)
+        y = max(0, (scaled.height() - r.height()) // 2)
+        cropped = scaled.copy(x, y, r.width(), r.height())
+        bg.setPixmap(cropped)
+        bg.setGeometry(r)
+        bg.lower()
+        bg.show()
+
+    def _enter_room_layout(self) -> None:
+        """Fullscreen room plate; Lucy stage floats and can be dragged."""
+        if self._load_room_bg() is None:
+            QMessageBox.warning(
+                self,
+                "房间背景",
+                f"找不到背景图：\n{self._room_bg_path()}",
+            )
+            self._room_backdrop = False
+            return
+        root = self._root
+        actor = self._actor
+        # Detach actor from compact layout so it can float
+        self._root_layout.removeWidget(actor)
+        actor.setParent(root)
+        actor.show()
+
+        screen = QGuiApplication.primaryScreen()
+        geo = screen.availableGeometry() if screen else None
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, False)
+        root.setStyleSheet("QWidget#root { background: #1a1520; }")
+        self.setStyleSheet("QMainWindow { background: #1a1520; }")
+        if geo is not None:
+            self.setGeometry(geo)
+        actor.adjustSize()
+        if self._state.lucy_x is not None and self._state.lucy_y is not None:
+            actor.move(int(self._state.lucy_x), int(self._state.lucy_y))
+        elif geo is not None:
+            # Default: lower-right of the room
+            ax = max(40, geo.width() - actor.width() - 80)
+            ay = max(40, geo.height() - actor.height() - 60)
+            actor.move(ax, ay)
+        self._clamp_actor()
+        self._refresh_room_bg_geom()
+        self._bg_label.lower()
+        actor.raise_()
+
+    def _exit_room_layout(self) -> None:
+        root = self._root
+        actor = self._actor
+        bg = self._bg_label
+        if bg is not None:
+            bg.hide()
+            bg.clear()
+        # Put actor back into compact layout
+        if self._root_layout.indexOf(actor) < 0:
+            self._root_layout.addWidget(
+                actor, 0, Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignRight
+            )
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+        root.setStyleSheet("QWidget#root { background: transparent; }")
+        self.setStyleSheet("")
+        self.adjustSize()
+        screen = QGuiApplication.primaryScreen()
+        geo = screen.availableGeometry() if screen else None
+        if self._state.x is not None and self._state.y is not None:
+            self.move(int(self._state.x), int(self._state.y))
+        elif geo is not None:
+            self.move(geo.right() - self.width() - 40, geo.bottom() - self.height() - 40)
+
+    def _apply_room_backdrop(self, on: bool) -> None:
+        """Fullscreen room background; drag Lucy around inside it."""
+        self._room_backdrop = bool(on)
+        if on:
+            self._enter_room_layout()
+        else:
+            self._exit_room_layout()
+        self.hide()
+        self.show()
+        self.raise_()
+        if self._room_backdrop:
+            QTimer.singleShot(0, self._refresh_room_bg_geom)
+            QTimer.singleShot(0, self._clamp_actor)
+
+    def resizeEvent(self, event) -> None:  # noqa: N802
+        super().resizeEvent(event)
+        if self._room_backdrop:
+            self._refresh_room_bg_geom()
+            self._clamp_actor()
+
     def _set_height(self, h: int) -> None:
         self._target_height = h
         self._pixmap_cache.clear()
         if self._base_sprite:
             self._set_sprite(self._base_sprite, animate=False, as_base=True)
-        self.adjustSize()
+        self._layout_fit()
         self._persist()
 
     def _pick_image(self) -> None:
@@ -1084,7 +1282,7 @@ class DesktopPetWindow(QMainWindow):
             self.img_preview.setText(Path(path).name)
         self.img_preview.setVisible(True)
         self.img_clear_btn.setVisible(True)
-        self.adjustSize()
+        self._layout_fit()
         self.raise_()
         self.activateWindow()
 
@@ -1093,7 +1291,7 @@ class DesktopPetWindow(QMainWindow):
         self.img_preview.clear()
         self.img_preview.setVisible(False)
         self.img_clear_btn.setVisible(False)
-        self.adjustSize()
+        self._layout_fit()
 
     def _on_send(self) -> None:
         text = self.input.text().strip()
@@ -1124,7 +1322,7 @@ class DesktopPetWindow(QMainWindow):
         if send_image:
             echo = ("[图片] " + echo).strip()
         self.bubble.start_loading(echo)
-        self.adjustSize()
+        self._layout_fit()
         # Thinking presence: mild thoughtful face while LLM runs
         self._pre_think_sprite = self._base_sprite or self._current_sprite
         if self._resolve_sprite_path(THINK_SPRITE):
@@ -1185,7 +1383,7 @@ class DesktopPetWindow(QMainWindow):
         if play_path and not self._state.muted and ja_sub:
             # JP karaoke + progress bar locked to audio; ZH soft-ok
             self.bubble.start_voice_sync(zh, ja_sub)
-            self.adjustSize()
+            self._layout_fit()
             self._play_voice(play_path)
             token = self._talk_hold_token
             QTimer.singleShot(
@@ -1200,7 +1398,7 @@ class DesktopPetWindow(QMainWindow):
             )
         else:
             self.bubble.setTextAnimated(zh, ja_sub, cps=self._type_cps)
-            self.adjustSize()
+            self._layout_fit()
             type_ms = int(max(900, len(zh) / max(1.0, self._type_cps) * 1000 + 400))
             QTimer.singleShot(type_ms, self._stop_talk_anim)
 
@@ -1280,7 +1478,7 @@ class DesktopPetWindow(QMainWindow):
         if voice_enabled:
             # Hold master echo +「语音准备中」until first audio (stream) / full wav (whole)
             self.bubble.start_loading(None, label="语音准备中")
-            self.adjustSize()
+            self._layout_fit()
             self._start_voice_job(jp, emo)
             # Stay busy until reveal (input still locked)
             return
@@ -1305,7 +1503,7 @@ class DesktopPetWindow(QMainWindow):
                 ja = self._last_jp_line
                 if ja:
                     self.bubble.start_voice_sync(zh, ja)
-                    self.adjustSize()
+                    self._layout_fit()
                 self._start_talk_anim(self._last_emotion, self._base_sprite or "l21")
                 self._play_voice(path)
             else:
@@ -1355,7 +1553,7 @@ class DesktopPetWindow(QMainWindow):
             ja = self._last_jp_line
             if ja:
                 self.bubble.start_voice_sync(zh, ja)
-                self.adjustSize()
+                self._layout_fit()
             self._start_talk_anim(self._last_emotion, self._base_sprite or "l21")
             self._play_voice(path)
         elif path and not self._state.muted:
@@ -1373,7 +1571,7 @@ class DesktopPetWindow(QMainWindow):
             zh = self._last_zh_line or "……"
             ja = self._last_jp_line
             self.bubble.setText(zh, subtitle=ja)
-            self.adjustSize()
+            self._layout_fit()
         self._refresh_replay_btn()
         if not self._show_debug:
             self.status.setText("语音生成失败" if was_replay else "")
@@ -1403,15 +1601,31 @@ class DesktopPetWindow(QMainWindow):
     # ----- mouse -----
     def mousePressEvent(self, event: QMouseEvent) -> None:  # noqa: N802
         if event.button() == Qt.MouseButton.LeftButton:
-            if self._over_interactive(event.globalPosition().toPoint()):
+            gpos = event.globalPosition().toPoint()
+            if self._over_interactive(gpos):
                 _win_set_click_through(int(self.winId()), False)
                 self._click_through = False
-                self._drag_offset = event.globalPosition().toPoint() - self.frameGeometry().topLeft()
+                if self._room_backdrop:
+                    # Drag Lucy stage inside the room
+                    local = self._actor.mapFromGlobal(gpos)
+                    self._actor_drag_offset = local
+                    self._drag_offset = None
+                else:
+                    self._drag_offset = gpos - self.frameGeometry().topLeft()
+                    self._actor_drag_offset = None
                 event.accept()
                 return
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:  # noqa: N802
+        if self._actor_drag_offset is not None and event.buttons() & Qt.MouseButton.LeftButton:
+            gpos = event.globalPosition().toPoint()
+            off = self._actor_drag_offset
+            new_tl = QPoint(gpos.x() - off.x(), gpos.y() - off.y())
+            self._actor.move(self._root.mapFromGlobal(new_tl))
+            self._clamp_actor()
+            event.accept()
+            return
         if self._drag_offset is not None and event.buttons() & Qt.MouseButton.LeftButton:
             self.move(event.globalPosition().toPoint() - self._drag_offset)
             event.accept()
@@ -1419,6 +1633,10 @@ class DesktopPetWindow(QMainWindow):
         super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:  # noqa: N802
+        if self._actor_drag_offset is not None:
+            self._actor_drag_offset = None
+            self._clamp_actor()
+            self._persist()
         if self._drag_offset is not None:
             self._drag_offset = None
             self._snap_edges()
@@ -1435,8 +1653,8 @@ class DesktopPetWindow(QMainWindow):
 def run_desktop_pet(settings: Settings | None = None) -> int:
     settings = settings or load_settings()
     app = QApplication.instance() or QApplication(sys.argv)
-    # Pet is a Tool window: native QFileDialog close would otherwise look like
-    # "last window gone" and tear down the whole process.
+    # Native QFileDialog close would otherwise look like "last window gone"
+    # and tear down the whole process while the pet should stay up.
     app.setQuitOnLastWindowClosed(False)
     bot = LucyCompanion(settings)
     win = DesktopPetWindow(bot, settings)

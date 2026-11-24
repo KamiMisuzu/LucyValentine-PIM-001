@@ -376,6 +376,8 @@ class SettingsDialog(PinkCardDialog):
         self.spin_max_tok.setValue(int(llm.get("max_tokens", 700)))
         self.chk_rewrite = QCheckBox("说完再润色一遍")
         self.chk_rewrite.setChecked(bool(llm.get("rewrite_enabled", False)))
+        self.chk_search = QCheckBox("联网搜索（通义 enable_search）")
+        self.chk_search.setChecked(bool(llm.get("enable_search", True)))
         llm_form.addRow(self._lbl("接口地址"), self.edit_base)
         llm_form.addRow(self._lbl("聊天模型"), self.edit_model)
         llm_form.addRow(self._lbl("看图模型"), self.edit_vision)
@@ -383,6 +385,7 @@ class SettingsDialog(PinkCardDialog):
         llm_form.addRow(self._lbl("访问密钥"), key_w)
         llm_form.addRow(self._lbl("回复活泼度"), self.spin_temp)
         llm_form.addRow(self._lbl("单次回复长度"), self.spin_max_tok)
+        llm_form.addRow(self.chk_search)
         llm_form.addRow(self.chk_rewrite)
         llm_hint = QLabel("密钥会写进本机设置；分享工程前请清空，改用环境变量更安心。")
         llm_hint.setObjectName("hint")
@@ -560,6 +563,7 @@ class SettingsDialog(PinkCardDialog):
             "llm.api_key": self.edit_key.text(),
             "llm.temperature": float(self.spin_temp.value()),
             "llm.max_tokens": int(self.spin_max_tok.value()),
+            "llm.enable_search": self.chk_search.isChecked(),
             "llm.rewrite_enabled": self.chk_rewrite.isChecked(),
             "paths.images_dir": self.edit_images.text().strip() or "images_hq",
             "power.enabled": self.chk_power_en.isChecked(),

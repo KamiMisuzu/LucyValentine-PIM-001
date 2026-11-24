@@ -60,6 +60,12 @@ class WeatherArgs(BaseModel):
     )
 
 
+class StockArgs(BaseModel):
+    query: str = Field(
+        description="Stock name or ticker, e.g. 英伟达, NVDA, Apple, 特斯拉, TSLA"
+    )
+
+
 @dataclass
 class ToolContext:
     """Mutable per-session context tools can read."""
@@ -549,6 +555,14 @@ def build_lucy_registry(
 
         return json.dumps(fetch_weather(city or "南宁"), ensure_ascii=False, indent=2)
 
+    def get_stock_quote(query: str = "NVDA") -> str:
+        """Latest stock/crypto quote via Yahoo Finance (free)."""
+        from ..world.public_apis import fetch_stock_quote
+
+        return json.dumps(
+            fetch_stock_quote(query or "NVDA"), ensure_ascii=False, indent=2
+        )
+
     reg = ToolRegistry()
     reg.register(
         Tool(
@@ -686,6 +700,15 @@ def build_lucy_registry(
             "Free: open-meteo.com，无需密钥。用 summary_ja / summary_zh 口语转述，不要背数字表格。",
             WeatherArgs,
             get_weather,
+        )
+    )
+    reg.register(
+        Tool(
+            "get_stock_quote",
+            "查股价/行情（美股等）。master 问英伟达/NVDA/苹果/特斯拉等股价时必须调用，禁止说没有手段或编造数字。"
+            "传 query=英伟达 或 NVDA。用 summary_ja/summary_zh 口语转述；注明可能有延迟。",
+            StockArgs,
+            get_stock_quote,
         )
     )
     reg.register(
