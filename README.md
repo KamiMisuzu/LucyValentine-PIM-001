@@ -1,5 +1,7 @@
 # LucyValentine-PIM-001
 
+English | [中文](README.zh-CN.md)
+
 Private desktop companion inspired by **Lucy ~The Eternity She Wished For~**:  
 **Chinese in → Japanese line + Chinese gloss → face + optional local TTS**.
 
