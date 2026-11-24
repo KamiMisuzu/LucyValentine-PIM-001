@@ -1,0 +1,68 @@
+# --- secrets & local machine ---
+companion/config/settings.yaml
+.env
+.env.*
+*.pem
+*.key
+
+# --- runtime / personal ---
+companion/data/sessions/*
+!companion/data/sessions/.gitkeep
+companion/data/debug/
+companion/data/desktop_state.json
+companion/data/emotion_state.json
+companion/data/lucy_power.json
+companion/data/life_event_classifier_state.json
+companion/data/personal_memories.jsonl
+companion/data/lucy_author_live.json
+companion/data/*_test.json
+companion/data/*_smoke.txt
+companion/data/year_sim_report*.json
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# --- generated media ---
+output/
+*.wav
+*.mp3
+!companion/assets/**
+
+# --- heavy / third-party installs (bring your own) ---
+GPT-SoVITS-v3lora-*/
+GPT_SoVITS/
+RVC/
+downloads/
+tools/ollama-models/
+tools/Ollama/
+
+# --- game / training assets (IP — do not publish by default) ---
+images/
+images_hq/
+images_hq_broken/
+images_lucy_src/
+voice/
+dataset/
+*.pth
+*.ckpt
+*.pt
+*.safetensors
+*.onnx
+
+# --- OS / IDE / Cursor ---
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+.cursor/
+.cursor-*/
+*.swp
+*~
+# never commit editor agent transcripts / local Cursor project junk
+agent-transcripts/

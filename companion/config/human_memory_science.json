@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "purpose": "Parameterize Lucy autobiographical retrieval from human memory science — not keyword TF toys.",
+    "not_clinical": "This is character continuity engineering inspired by peer-reviewed models; not a PTSD diagnosis tool."
+  },
+  "papers": [
+    {
+      "id": "conway2000",
+      "cite": "Conway & Pleydell-Pearce (2000). The construction of autobiographical memories in the self-memory system. Psychological Review.",
+      "use": "SMS hierarchy; generative (goal-directed) vs direct (cue-driven) retrieval; current goals gate what reaches consciousness."
+    },
+    {
+      "id": "tulving1973",
+      "cite": "Tulving & Thomson (1973). Encoding specificity and retrieval processes in episodic memory. Psychological Review.",
+      "use": "Retrieval probability rises with overlap between retrieval cues and features stored at encoding."
+    },
+    {
+      "id": "berntsen_iam",
+      "cite": "Berntsen (2010/2021). Involuntary autobiographical memories; cue distinctiveness & cue overload.",
+      "use": "Direct/involuntary path: distinctive feature overlap wins; cues shared by many events are weak (cue overload)."
+    },
+    {
+      "id": "brewin_drt",
+      "cite": "Brewin et al. (1996/2010/2014). Dual representation theory of PTSD (SAM/VAM; S-rep/C-rep).",
+      "use": "Trauma: strong situationally accessible sensory-affective traces + weak contextual/verbal links → cue-triggered intrusion; recovery = re-associate into contextual autobiographical memory."
+    },
+    {
+      "id": "ehlers_clark2000",
+      "cite": "Ehlers & Clark (2000). A cognitive model of PTSD. Behaviour Research and Therapy.",
+      "use": "Poor elaboration into AM base → weak intentional recall, strong associative/perceptual triggering, here-and-now threat sense; appraisals maintain current threat."
+    },
+    {
+      "id": "anderson_rif",
+      "cite": "Anderson (2003). Rethinking interference: inhibitory control & retrieval-induced forgetting.",
+      "use": "Spreading activation to competitors; inhibitory control suppresses non-selected associates after retrieval."
+    },
+    {
+      "id": "roberts2008",
+      "cite": "Roberts & Mroczek (2008). Personality trait change in adulthood.",
+      "use": "Traits/motives keep changing via life experience — event ledger growth."
+    }
+  ],
+  "params": {
+    "encoding_specificity_weight": 1.0,
+    "cue_distinctiveness_power": 0.85,
+    "cue_overload_beta": 0.55,
+    "generative_vam_bonus": 0.55,
+    "generative_sam_penalty": 0.35,
+    "direct_sam_bonus": 0.85,
+    "direct_vam_bonus": 0.15,
+    "trauma_here_and_now_boost": 0.7,
+    "goal_gate_weight": 0.4,
+    "rif_inhibition": 0.45,
+    "rif_decay": 0.25,
+    "attachment_lowers_trauma_inhibition": 0.5,
+    "summary_specificity_penalty": 0.35,
+    "actr_decay_d": 0.5,
+    "actr_gamma": 1.15,
+    "actr_attention_w": 1.0,
+    "actr_blend": 0.45
+  },
+  "open_source_ports": [
+    "UWCCDL/PTSD — ACT-R A=B+S+γI (companion/third_party/UWCCDL-PTSD)",
+    "0xNyk/lacp — Conway SMS significance decay + goal gate (lacp-sms)",
+    "sci-m-wang/BFI-Adapt — life-event→OCEAN priors (wired in science/bfi_adapt_priors.py)",
+    "hasan-mavlonov/stable_mind — EMA consolidation reference (MindForm-stable_mind)"
+  ],
+  "trauma_cue_lexicon": {
+    "abandon": ["抛弃", "丢掉", "不要你", "不要我", "离开我", "扔掉", "abandon", "discard", "捨て", "忘れられた"],
+    "forget": ["忘了我", "不记得我", "把我忘了", "forgotten me", "forgot me", "忘れないで"],
+    "fire": ["火", "燃烧", "fire", "burn", "炎", "见不到", "见不了", "分离", "分开", "烧毁", "烧掉", "沉默", "销毁"],
+    "useless": ["没用", "废物", "没用处", "useless"],
+    "replace": ["换一个", "新品", "代替", "replace"]
+  },
+  "episode_priors": {
+    "abandon_past": {"sam": 0.9, "vam": 0.25, "trauma": true, "cues": ["abandon", "forget", "wait", "reserve", "previous"]},
+    "fire_end": {"sam": 0.95, "vam": 0.3, "trauma": true, "cues": ["fire", "burn", "remember", "forever", "silence", "silent", "destroyed", "apart", "separated"]},
+    "eternity_talk": {"sam": 0.35, "vam": 0.75, "trauma": false, "cues": ["eternity", "forever", "side", "stay"]},
+    "restore_now": {"sam": 0.3, "vam": 0.85, "trauma": false, "cues": ["restore", "wake", "home", "restored"]},
+    "daily_life": {"sam": 0.2, "vam": 0.7, "trauma": false, "cues": ["home", "meal", "greet", "chore"]},
+    "cooking": {"sam": 0.25, "vam": 0.65, "trauma": false, "cues": ["cook", "food", "meal"]},
+    "order_protect": {"sam": 0.45, "vam": 0.55, "trauma": false, "cues": ["order", "run", "danger"]},
+    "father_conflict": {"sam": 0.4, "vam": 0.55, "trauma": false, "cues": ["father", "reject"]},
+    "care_sick": {"sam": 0.25, "vam": 0.7, "trauma": false, "cues": ["sick", "care", "temperature"]}
+  }
+}

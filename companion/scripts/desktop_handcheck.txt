@@ -1,0 +1,20 @@
+Lucy desktop polish hand-check
+================================
+
+Launch:
+  $env:PYTHONPATH="G:\LIngyuanli\Project\Lucy\companion\src"
+  cd G:\LIngyuanli\Project\Lucy\companion
+  python scripts\run_desktop_lucy.py
+
+Checklist:
+  [ ] 「我回来了」→ words appear before VO finishes synthesizing
+  [ ] Face matches line emotion (not stuck neutral while voice is pleading/serious)
+  [ ] VO note / wav name carries emotion (tts_balanced[emotion])
+  [ ] Thinking face (l35) during LLM wait; back to reply face
+  [ ] Idle: soft breath + rare eye-dip only; no random mood thrash
+  [ ] Speaking ends when audio ends (no 12s fake hold)
+  [ ] 「永远」 soft; 「不要丢掉我」 may go trauma recall — not every chitchat
+  [ ] Cover-cut sprite switch never blanks the whole character
+
+Stress (no LLM):
+  python scripts\stress_memory_personality.py

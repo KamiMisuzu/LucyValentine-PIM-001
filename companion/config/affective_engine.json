@@ -1,0 +1,108 @@
+{
+  "version": 4,
+  "model": "dyadic_attachment_v1",
+  "comment": "Human dyadic affect: threat activates attachment; partner response co-regulates or co-dysregulates; felt security is slow.",
+  "pace": {
+    "relation_scale": 0.42,
+    "vad_event_scale": 0.38,
+    "vad_trigger_blend_max": 0.16,
+    "vad_llm_pull": 0.18,
+    "habituation_half_life_hours": 5.0,
+    "habituation_floor": 0.18
+  },
+  "attachment": {
+    "start_activation": 0.12,
+    "threat_gain": 0.55,
+    "mild_threat_gain": 0.28,
+    "decay_half_life_hours": 3.5,
+    "soothe_relief": 0.22,
+    "presence_relief": 0.06,
+    "harsh_spike": 0.18,
+    "proximity_bias_at": 0.35,
+    "proximity_emotions": ["worried", "anxious", "pleading", "shy"]
+  },
+  "coregulation": {
+    "soothe_while_activated": {
+      "security": 0.0085,
+      "trust": 0.0040,
+      "bond": 0.0030,
+      "vad": { "v": 0.045, "a": -0.055, "d": 0.03 }
+    },
+    "harsh_while_activated": {
+      "security": -0.008,
+      "trust": -0.006,
+      "vad": { "v": -0.06, "a": 0.07, "d": -0.04 }
+    },
+    "presence_while_activated": {
+      "security": 0.0018,
+      "vad": { "v": 0.012, "a": -0.018, "d": 0.01 }
+    },
+    "calm_partner_pull": 0.08,
+    "activation_amplifies_threat_vad": 0.75
+  },
+  "ou": {
+    "theta": 0.45,
+    "sigma": 0.028,
+    "dt_hours_cap": 96
+  },
+  "vad": {
+    "baseline": { "v": 0.12, "a": 0.26, "d": 0.34 },
+    "security_baseline_shift": {
+      "v_per_security": 0.22,
+      "a_per_security": -0.12,
+      "d_per_security": 0.10
+    }
+  },
+  "relation": {
+    "dims": {
+      "bond": 0.32,
+      "security": 0.26,
+      "openness": 0.20,
+      "trust": 0.28,
+      "familiarity": 0.18
+    },
+    "passive_decay_per_day": {
+      "bond": 0.0006,
+      "security": 0.00045,
+      "openness": 0.0002,
+      "trust": 0.0005,
+      "familiarity": 0.00035
+    },
+    "stages": [
+      { "id": "fragile_new", "min_bond": 0, "min_security": 0, "min_trust": 0 },
+      { "id": "learning_to_stay", "min_bond": 0.46, "min_security": 0.40, "min_trust": 0.40 },
+      { "id": "warming", "min_bond": 0.60, "min_security": 0.52, "min_trust": 0.52 },
+      { "id": "trusted_companion", "min_bond": 0.76, "min_security": 0.68, "min_trust": 0.70 }
+    ]
+  },
+  "event_class": {
+    "threat": ["abandon_fear"],
+    "harsh": ["anger_at_lucy"],
+    "trauma": ["fire_memory"],
+    "soothe": ["comfort", "apology_to_lucy"],
+    "affirm": ["praise", "remember_eternity", "restore_gratitude", "birthday"],
+    "care": ["care", "sick_care"],
+    "available": ["welcome_home", "food", "presence"]
+  },
+  "event_deltas": {
+    "praise": { "bond": 0.0032, "trust": 0.0022, "security": 0.0012, "vad": { "v": 0.045, "a": 0.025, "d": 0.012 } },
+    "comfort": { "bond": 0.0025, "security": 0.0055, "openness": 0.0014, "vad": { "v": 0.03, "a": -0.02, "d": 0.022 } },
+    "care": { "bond": 0.0032, "security": 0.0030, "trust": 0.0018, "vad": { "v": 0.018, "a": 0.02, "d": 0.012 } },
+    "welcome_home": { "bond": 0.0018, "familiarity": 0.0022, "security": 0.0010, "vad": { "v": 0.035, "a": 0.02, "d": 0.01 } },
+    "food": { "familiarity": 0.0016, "bond": 0.0009, "vad": { "v": 0.022, "a": 0.008, "d": 0.006 } },
+    "birthday": { "bond": 0.010, "trust": 0.009, "familiarity": 0.007, "security": 0.004, "vad": { "v": 0.09, "a": 0.05, "d": 0.025 } },
+    "remember_eternity": { "bond": 0.0040, "trust": 0.0032, "openness": 0.0018, "security": 0.0025, "vad": { "v": 0.04, "a": 0.02, "d": 0.022 } },
+    "restore_gratitude": { "bond": 0.0035, "trust": 0.0040, "security": 0.0032, "vad": { "v": 0.035, "a": 0.015, "d": 0.022 } },
+    "abandon_fear": { "security": -0.0055, "trust": -0.0040, "openness": 0.0008, "vad": { "v": -0.065, "a": 0.055, "d": -0.03 } },
+    "fire_memory": { "security": -0.0035, "openness": 0.0012, "vad": { "v": -0.055, "a": 0.04, "d": -0.022 } },
+    "anger_at_lucy": { "security": -0.0050, "trust": -0.0040, "vad": { "v": -0.05, "a": 0.055, "d": -0.022 } },
+    "apology_to_lucy": { "security": 0.0022, "trust": 0.0018, "vad": { "v": 0.018, "a": -0.012, "d": 0.01 } },
+    "presence": { "bond": 0.00030, "familiarity": 0.00040, "vad": { "v": 0.003, "a": 0.001, "d": 0.0015 } }
+  },
+  "absence": {
+    "miss_after_hours": 48,
+    "loneliness_vad": { "v": -0.022, "a": 0.018, "d": -0.012 },
+    "security_hit_per_day": 0.0022,
+    "activation_rise_per_day": 0.04
+  }
+}

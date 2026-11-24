@@ -1,0 +1,24 @@
+{
+  "total": 1284,
+  "seeds": 7,
+  "spoken_shared": 654,
+  "chapter_beats": 970,
+  "episode_summaries": 13,
+  "by_episode": {
+    "daily_life": 859,
+    "outing": 104,
+    "talk_feelings": 72,
+    "father_conflict": 59,
+    "care_sick": 39,
+    "eternity_talk": 34,
+    "cooking": 32,
+    "order_protect": 25,
+    "housework": 25,
+    "welcome_home": 14,
+    "fire_end": 8,
+    "abandon_past": 7,
+    "restore_now": 6
+  },
+  "focus": "shared experiences between Lucy and master",
+  "continuity": "destroyed -> restored by master(~20)"
+}

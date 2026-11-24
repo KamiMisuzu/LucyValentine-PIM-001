@@ -1,0 +1,8 @@
+This directory vendors third-party source for adaptation.
+
+baremetal-react/
+  Source: https://github.com/pronzzz/baremetal-react
+  License: MIT (see baremetal-react/LICENSE)
+  Copyright (c) 2026 pronzzz
+
+Lucy companion ReAct loop/registry are adapted from that project's agent.py and tools.py.

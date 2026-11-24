@@ -1,0 +1,124 @@
+# Copy to settings.yaml and fill in secrets.
+# settings.yaml is gitignored — never commit API keys.
+
+# Leave "." to auto-detect repo root from this file's location.
+project_root: .
+
+llm:
+  # Local Ollama:
+  #   base_url: http://127.0.0.1:11434/v1
+  #   api_key: ollama
+  #   model: qwen3:8b
+  # Cloud (OpenAI-compatible), prefer env for the key:
+  provider: qianwen
+  base_url: https://maas.qianwenaiapi.com/compatible-mode/v1
+  api_key_env: QIANWEN_API_KEY
+  api_key: ""
+  model: qwen3.8-flash
+  vision_model: qwen3.8-flash
+  temperature: 0.7
+  max_tokens: 700
+  think: false
+  rewrite_enabled: false
+  rewrite_model: qwen3.8-flash
+
+agent:
+  enabled: true
+  max_iterations: 5
+  debug_trace: false
+  temperature: 0.5
+  max_tokens: 700
+  critic_enabled: true
+  jp_top_k: 5
+  force_motives_in_prompt: false
+  no_think: true
+  strip_vocative: true
+  vocative_aliases: []
+  ask_frame: false
+
+world:
+  prefetch_time: false
+  prefetch_weather: true
+
+paths:
+  persona: companion/config/lucy_persona.txt
+  agent_system: companion/config/lucy_agent_system.txt
+  identity: companion/config/lucy_identity.json
+  author_live: companion/data/lucy_author_live.json
+  few_shots: companion/config/lucy_few_shots.jsonl
+  speech_modes: companion/config/speech_modes.json
+  jp_lines: GPT-SoVITS-v3lora-20250401/output/asr_opt/lucy_jp_clean.list
+  personality_cards: companion/data/lucy_personality_cards.jsonl
+  life_events: companion/data/lucy_life_events.jsonl
+  personality_event_map: companion/config/personality_event_map.json
+  human_memory_science: companion/config/human_memory_science.json
+  affect_curves: companion/config/affect_curves.json
+  shared_episodes: companion/data/shared_episodes.jsonl
+  canon_memories: companion/data/canon_memories.jsonl
+  personal_memories: companion/data/personal_memories.jsonl
+  emotion_summary: dataset/lucy_sprite_emotion_summary.json
+  emotion_triggers: companion/config/emotion_triggers.json
+  emotion_state: companion/data/emotion_state.json
+  affective_engine: companion/config/affective_engine.json
+  images_dir: images_hq
+  sessions_dir: companion/data/sessions
+  voice_script_map: dataset/voice_script_map.jsonl
+
+memory:
+  canon_top_k: 6
+  personal_top_k: 4
+  recent_turns: 12
+
+face:
+  enabled: true
+  default_sprite: l21
+  prefer_llm_sprite: true
+  blend_growth_on_activation: true
+
+voice:
+  enabled: true
+  lang: ja
+  out_dir: output/companion_voice
+  style: tts_balanced
+  # whole = wait for full line; stream = play each clause as it finishes
+  playback: whole
+  autoplay: false
+  # Relative to project_root (or absolute)
+  python_exe: GPT-SoVITS-v3lora-20250401/runtime/python.exe
+  worker_script: scripts/companion_tts_worker.py
+
+chat:
+  user_address_default: master
+  save_personal_memory_each_turn: false
+  auto_life_events: true
+  life_event_cooldown_hours: 6.0
+  life_event_min_intensity: 0.45
+  personality_pull_rate: 0.12
+  history_reload_days: 7
+  default_weather_city: ""
+  debug_log: false
+  debug_print: false
+
+timeline:
+  # Your continuity dates — edit locally, do not commit personal facts you care about
+  master_birthday: "2000-01-01"
+  restored_on: "2026-01-01"
+
+power:
+  enabled: true
+  capacity_deg: 100
+  tokens_per_full: 1000000
+  state_path: companion/data/lucy_power.json
+
+desktop:
+  enabled: true
+  always_on_top: true
+  target_height: 520
+  render_boost: 1.45
+  scale: 0.55
+  sprite_fade_ms: 280
+  typewriter_cps: 28
+  position: null
+  bubble_max_chars: 400
+  show_debug: false
+  show_power: true

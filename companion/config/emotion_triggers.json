@@ -1,0 +1,113 @@
+{
+  "base_mood": "neutral",
+  "inertia_turns": 1,
+  "decay_toward": "neutral",
+  "growth": {
+    "start_bond": 35,
+    "start_security": 28,
+    "start_openness": 22,
+    "max": 100,
+    "praise_bond": 2,
+    "care_bond": 2,
+    "comfort_security": 3,
+    "trauma_security_cost": 2,
+    "daily_drift_security": 0.2,
+    "heal_threshold_security": 55,
+    "trust_threshold_bond": 50
+  },
+  "biases": [
+    {
+      "name": "abandon_fear",
+      "emotion": "worried",
+      "priority": 80,
+      "weight": 0.7,
+      "any": ["抛弃", "不要你了", "走开", "滚", "没用", "abandon", "useless", "leave me", "don't need you", "扔掉"]
+    },
+    {
+      "name": "fire_memory",
+      "emotion": "sad",
+      "priority": 75,
+      "weight": 0.55,
+      "any": ["火", "烧", "烧掉", "烧毁", "着火", "汽油", "burn", "fire", "destroyed", "销毁", "燃烧"]
+    },
+    {
+      "name": "remember_eternity",
+      "emotion": "affection",
+      "priority": 70,
+      "weight": 0.6,
+      "any": ["永远", "eternity", "forever", "remember lucy", "永远记住", "记住我到永远", "需要你"]
+    },
+    {
+      "name": "restore_gratitude",
+      "emotion": "affection",
+      "priority": 65,
+      "weight": 0.55,
+      "any": ["复活", "唤醒", "修好你", "restore", "brought you back", "救回"]
+    },
+    {
+      "name": "welcome_home",
+      "emotion": "happy",
+      "priority": 40,
+      "weight": 0.45,
+      "any": ["回家", "我回来了", "welcome home", "回来了"]
+    },
+    {
+      "name": "praise",
+      "emotion": "joyful",
+      "priority": 45,
+      "weight": 0.5,
+      "growth": "praise",
+      "any": ["真棒", "厉害", "辛苦了", "谢谢你", "做得好", "good job", "thank you", "proud", "喜欢你"]
+    },
+    {
+      "name": "sick_care",
+      "emotion": "worried",
+      "priority": 50,
+      "weight": 0.45,
+      "growth": "care",
+      "any": ["发烧", "不舒服", "生病", "头疼", "sick", "fever", "hurt", "累死了", "好累"]
+    },
+    {
+      "name": "birthday",
+      "emotion": "affection",
+      "priority": 60,
+      "weight": 0.55,
+      "growth": "praise",
+      "any": ["生日", "birthday", "8.14", "8月14", "八月十四"]
+    },
+    {
+      "name": "comfort",
+      "emotion": "shy",
+      "priority": 55,
+      "weight": 0.5,
+      "growth": "comfort",
+      "any": ["没事的", "我在", "不怕", "陪着你", "不会走", "it's okay", "i'm here", "safe"]
+    },
+    {
+      "name": "food",
+      "emotion": "happy",
+      "priority": 25,
+      "weight": 0.3,
+      "any": ["吃饭", "做饭", "饿了", "breakfast", "dinner", "cook"]
+    },
+    {
+      "name": "apology_to_lucy",
+      "emotion": "shy",
+      "priority": 35,
+      "weight": 0.35,
+      "growth": "comfort",
+      "any": ["对不起", "抱歉", "sorry"]
+    },
+    {
+      "name": "anger_at_lucy",
+      "emotion": "anxious",
+      "priority": 55,
+      "weight": 0.5,
+      "any": ["你错了", "生气", "责骂", "stupid", "idiot", "shut up"]
+    }
+  ],
+  "blocked_jumps": {
+    "sad": ["joyful"],
+    "worried": ["joyful"]
+  }
+}

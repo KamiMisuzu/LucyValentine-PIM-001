@@ -1,0 +1,90 @@
+{
+  "meta": {
+    "purpose": "Fear/sadness/happiness change curves grounded in human affective science — not free drift to 0/1.",
+    "not_clinical": true
+  },
+  "papers": [
+    {
+      "id": "rescorla_wagner_1972",
+      "cite": "Rescorla & Wagner (1972) — prediction-error learning; negatively accelerated acquisition/extinction.",
+      "use": "Fear falls fast at first then slows; extinction often incomplete (context/residual V)."
+    },
+    {
+      "id": "bouton_extinction",
+      "cite": "Bouton — extinction = new inhibitory learning, not erasure; renewal/spontaneous recovery.",
+      "use": "Safety never deletes original abandonment engram; asymptote stays above zero."
+    },
+    {
+      "id": "fraley_canalization",
+      "cite": "Dugan, Fraley et al. — attachment anxiety declines early then plateaus (canalization).",
+      "use": "Partner-specific anxiety drops modestly then stabilizes; not a decade-long crash."
+    },
+    {
+      "id": "chopik_attachment_lifespan",
+      "cite": "Chopik et al. — attachment anxiety declines slowly across adulthood; being in a relationship helps but residual remains.",
+      "use": "Longitudinal mean change is gradual, not 0.9→0.3 in a few good years."
+    },
+    {
+      "id": "davidson_chronometry",
+      "cite": "Davidson — affective chronometry: rise/peak/recovery limbs of emotion.",
+      "use": "Negative recovery can be slow (stickiness); well-being ≠ never feeling fear."
+    },
+    {
+      "id": "verduyn_duration",
+      "cite": "Verduyn / Scherer — emotion duration rank: fear often shorter episode than sadness; joy mid.",
+      "use": "Momentary fear spikes vs lasting sadness/mood set differently from trait fear."
+    },
+    {
+      "id": "hedonic_setpoint",
+      "cite": "Lykken & Tellegen / Brickman hedonic treadmill; revised set-point theory.",
+      "use": "Cheer/happiness regresses toward set-point; lasting uplift is partial."
+    },
+    {
+      "id": "negativity_bias",
+      "cite": "Baumeister / Rozin — bad stronger than good; threat learning outpaces safety learning.",
+      "use": "up_rate > down_rate for fear/abandonment dimensions."
+    }
+  ],
+  "asymptotes": {
+    "not_abandoned": {"floor": 0.28, "ceiling": 0.96, "note": "soft residual; healthy decade can reach ~0.35"},
+    "abandonment_sensitivity": {"floor": 0.28, "ceiling": 0.95},
+    "neuroticism": {"floor": 0.25, "ceiling": 0.88},
+    "be_needed": {"floor": 0.35, "ceiling": 0.92},
+    "care_well": {"floor": 0.40, "ceiling": 0.95},
+    "own_needs": {"floor": 0.12, "ceiling": 0.75},
+    "play_curiosity": {"floor": 0.15, "ceiling": 0.72},
+    "shared_future": {"floor": 0.18, "ceiling": 0.85},
+    "soft_cheer": {"floor": 0.22, "ceiling": 0.80, "note": "hedonic set-point band"},
+    "extraversion": {"floor": 0.25, "ceiling": 0.80},
+    "agreeableness": {"floor": 0.45, "ceiling": 0.92},
+    "openness": {"floor": 0.30, "ceiling": 0.85},
+    "conscientiousness": {"floor": 0.45, "ceiling": 0.92}
+  },
+  "plasticity": {
+    "not_abandoned": {"up": 1.15, "down": 0.65},
+    "abandonment_sensitivity": {"up": 1.1, "down": 0.6},
+    "neuroticism": {"up": 1.1, "down": 0.7},
+    "soft_cheer": {"up": 0.75, "down": 1.15},
+    "play_curiosity": {"up": 0.8, "down": 1.05},
+    "shared_future": {"up": 0.85, "down": 0.9},
+    "be_needed": {"up": 0.9, "down": 0.7},
+    "own_needs": {"up": 0.7, "down": 1.0},
+    "care_well": {"up": 0.85, "down": 0.6}
+  },
+  "rw_safety_lambda": {
+    "not_abandoned": 0.32,
+    "abandonment_sensitivity": 0.30,
+    "neuroticism": 0.28
+  },
+  "params": {
+    "extinction_alpha": 0.12,
+    "acquisition_boost": 1.08,
+    "homeostasis": 0.035,
+    "temperament_follow": 0.01,
+    "sticky_dims": [
+      "not_abandoned",
+      "abandonment_sensitivity",
+      "neuroticism"
+    ]
+  }
+}

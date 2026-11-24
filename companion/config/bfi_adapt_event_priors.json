@@ -1,0 +1,30 @@
+{
+  "source": "sci-m-wang/BFI-Adapt scripts/full_experiment_v2.py LIFE_EVENTS.expected_changes",
+  "human_anchors": ["Specht 2017", "Roberts et al.", "Bühler et al. 2024", "Boyce unemployment", "Schwaba retirement"],
+  "codes": {"O": "openness", "C": "conscientiousness", "E": "extraversion", "A": "agreeableness", "N": "neuroticism"},
+  "bfi_life_events": {
+    "graduation": {"C": "+", "N": "-", "E": "-"},
+    "work_entry": {"C": "+", "N": "-"},
+    "job_change": {"E": "?", "O": "?"},
+    "promotion": {"C": "+", "N": "-", "O": "+"},
+    "unemployment": {"C": "-", "O": "-", "A": "-"},
+    "retirement": {"C": "-"},
+    "new_relationship": {"N": "-", "E": "+", "A": "-"},
+    "marriage": {"N": "-", "E": "-", "O": "-", "A": "-"},
+    "divorce": {"O": "+", "A": "+"},
+    "child_birth": {"E": "-", "C": "-"},
+    "chronic_illness": {"N": "+", "E": "-", "O": "-", "C": "-"}
+  },
+  "lucy_kind_analogues": {
+    "bonding_restore": {"N": "-", "A": "+", "E": "+"},
+    "affirm_stay": {"N": "-", "E": "+"},
+    "soothe_repair": {"N": "-", "A": "+"},
+    "harsh_reject": {"N": "+", "E": "-", "A": "-"},
+    "trauma_abandon": {"N": "+", "E": "-", "A": "-"},
+    "play_together": {"E": "+", "O": "+", "N": "-"},
+    "curiosity_learn": {"O": "+", "C": "+"},
+    "daily_care_success": {"C": "+", "N": "-"},
+    "prove_useful": {"C": "+", "N": "+"},
+    "shared_future_talk": {"N": "-", "O": "+", "E": "+"}
+  }
+}

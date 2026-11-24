@@ -1,0 +1,30 @@
+Lucy Companion
+==============
+
+Code license: MIT (see LICENSE)
+
+Third-party notices
+-------------------
+See companion/third_party/NOTICE for vendored / adapted sources
+(including baremetal-react, MIT).
+
+Fan-work / IP disclaimer
+------------------------
+This repository ships **software** for a desktop companion loop (LLM agent,
+memory, emotion, GPT-SoVITS bridge, Qt pet UI), inspired by the game
+**Lucy ~The Eternity She Wished For~**.
+
+It does **not** grant rights to:
+  - character designs, sprites, or artwork from that game (or any commercial work)
+  - original voice performances / game audio used for TTS reference or fine-tunes
+  - copyrighted dialogue or script text from the source work
+
+Sprites, reference voice, and fine-tuned SoVITS/GPT weights are **bring your
+own** (inference weights only — this repo does not document or ship training).
+Do not redistribute those assets unless you own the rights or have permission.
+
+**LucyValentine-PIM-001** is an unofficial fan experiment and is **not
+affiliated with, endorsed by, or related to** the rights holders of
+Lucy ~The Eternity She Wished For~.
+
+Trademarks and titles belong to their respective owners.
